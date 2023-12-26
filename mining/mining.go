@@ -168,7 +168,7 @@ ReBuildTx:
 	fmt.Println("target:", target, "nonce:", nonce)
 	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
 	var payloadBytes []byte
-
+	s256 := sha256.New()
 	for {
 		if statHash {
 			fmt.Println(utils.BoldYellow("[Mining]: "),
@@ -191,13 +191,13 @@ ReBuildTx:
 			return
 		}
 
-		s256 := sha256.New()
 		_, err = s256.Write(payloadBytes)
 		if err != nil {
 			Logger.Errorf("mining: s256.Write err: %v", err)
 			return
 		}
 		hashBytes := s256.Sum(nil)
+		s256.Reset()
 		result := new(big.Int).SetBytes(hashBytes)
 
 		if result.Cmp(target) < 0 {
