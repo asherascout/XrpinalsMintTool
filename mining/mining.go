@@ -162,7 +162,7 @@ ReBuildTx:
 
 	target := bitcoin.NBits2Target(Difficult)
 	txBuildTime := time.Now().Unix()
-	fmt.Println("target:", target)
+	fmt.Println("target:", target, "nonce:", nonce)
 	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
 
 	for {
