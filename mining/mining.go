@@ -157,6 +157,7 @@ func (m *Miner) mining(wg *sync.WaitGroup, nonce uint64) {
 ReBuildTx:
 	nonce = origNonce
 	statIdx := int64(0)
+	_statIdx := int64(0)
 	txHash, unSignedTx, err := m.buildMintTx()
 	if err != nil {
 		Logger.Errorf("mining: buildMintTx err: %v", err)
@@ -164,25 +165,25 @@ ReBuildTx:
 	}
 
 	target := bitcoin.NBits2Target(Difficult)
-	txBuildTime := time.Now().Unix()
+	// txBuildTime := time.Now().Unix()
 	fmt.Println("target:", target, "nonce:", nonce)
 	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
 	var payloadBytes []byte
 	s256 := sha256.New()
 	for {
 		if statHash {
-			fmt.Println(utils.BoldYellow("[Mining]: "),
-				utils.Bold("Pow Hash Speed ------------------------- "),
-				utils.FgWhiteBgGreen(statIdx))
-
+			if statIdx > 10000000+_statIdx {
+				fmt.Println("[Mining]: ", statIdx)
+				_statIdx = statIdx
+			}
 			statIdx = statIdx + int64(MinerNum)
 		}
 
-		if (time.Now().Unix() - txBuildTime) > tx_builder.ExpireSeconds/2 {
-			fmt.Println(utils.BoldYellow("[Mining]: "),
-				utils.BoldGreen("Re-build mint transaction in case of expiring"))
-			goto ReBuildTx
-		}
+		// if (time.Now().Unix() - txBuildTime) > tx_builder.ExpireSeconds/2 {
+		// 	fmt.Println(utils.BoldYellow("[Mining]: "),
+		// 		utils.BoldGreen("Re-build mint transaction in case of expiring"))
+		// 	goto ReBuildTx
+		// }
 		var err error
 		// payloadBytes =
 		payloadBytes, err = payload.pack(nonce)
