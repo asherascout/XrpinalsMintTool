@@ -37,7 +37,7 @@ func init() {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
 	if numCPU > 1 {
-		MinerNum = numCPU * 100
+		MinerNum = numCPU
 	}
 }
 
@@ -164,6 +164,7 @@ ReBuildTx:
 	txBuildTime := time.Now().Unix()
 	fmt.Println("target:", target, "nonce:", nonce)
 	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
+	var payloadBytes []byte
 
 	for {
 		if statHash {
@@ -179,10 +180,9 @@ ReBuildTx:
 				utils.BoldGreen("Re-build mint transaction in case of expiring"))
 			goto ReBuildTx
 		}
-
-		payload.Nonce = nonce
-
-		payloadBytes, err := payload.pack()
+		var err error
+		// payloadBytes =
+		payloadBytes, err = payload.pack(nonce)
 		if err != nil {
 			Logger.Errorf("mining: payload.pack err: %v", err)
 			return
@@ -210,7 +210,7 @@ ReBuildTx:
 	}
 
 	// broadcast tx
-	unSignedTx.NoncePow = nonce
+	unSignedTx.NoncePow = payloadBytes[len(payloadBytes)-8:]
 	signedTx, err := m.signMintTx(unSignedTx)
 	if err != nil {
 		Logger.Errorf("mining: signMintTx err: %v", err)
@@ -273,7 +273,6 @@ type PowPayload struct {
 	TxHash       string
 	Reserved     [44]byte
 	NBits        uint32
-	Nonce        uint64
 	snapBytesRet []byte
 }
 
@@ -300,13 +299,21 @@ func (p *PowPayload) packOrigin() ([]byte, error) {
 	bytesRet = append(bytesRet, hashBytes...)
 	bytesRet = append(bytesRet, p.Reserved[:]...)
 	bytesRet = append(bytesRet, tx_builder.PackUint32(p.NBits)...)
-
+	bytesRet = append(bytesRet, make([]byte, 8)...)
 	return bytesRet, nil
 }
 
-func (p *PowPayload) pack() ([]byte, error) {
-	bytesRet := append([]byte{}, p.snapBytesRet...)
-	bytesRet = append(bytesRet, tx_builder.PackUint64(p.Nonce)...)
+func (p *PowPayload) pack(nonce uint64) ([]byte, error) {
+	payload := p.snapBytesRet
 
-	return bytesRet, nil
+	payload[len(payload)-8] = byte(nonce)
+	payload[len(payload)-7] = byte(nonce >> 8)
+	payload[len(payload)-6] = byte(nonce >> 16)
+	payload[len(payload)-5] = byte(nonce >> 24)
+	payload[len(payload)-4] = byte(nonce >> 32)
+	payload[len(payload)-3] = byte(nonce >> 40)
+	payload[len(payload)-2] = byte(nonce >> 48)
+	payload[len(payload)-1] = byte(nonce >> 56)
+
+	return payload, nil
 }

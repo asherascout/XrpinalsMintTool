@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/bitnexty/secp256k1-go"
-	"github.com/xrpinals/XrpinalsMintTool/property"
 	"strconv"
 	"strings"
+
+	"github.com/bitnexty/secp256k1-go"
+	"github.com/xrpinals/XrpinalsMintTool/property"
 )
 
 func PackUint8(v uint8) []byte {
@@ -105,8 +106,8 @@ type TransferOperation struct {
 }
 
 func (to *TransferOperation) SetValue(fromAddr string, toAddr string, assetName string,
-	amount uint64, fee uint64) error {
-
+	amount uint64, fee uint64,
+) error {
 	to.Fee.SetDefault()
 	to.Fee.Amount = int64(fee)
 
@@ -155,11 +156,11 @@ func (to *TransferOperation) Pack() []byte {
 	bytesAmount := to.Amount.Pack()
 
 	bytesRet = append(bytesRet, bytesFee...)
-	//guarantee_id
+	// guarantee_id
 	bytesRet = append(bytesRet, byte(0))
-	//from
+	// from
 	bytesRet = append(bytesRet, byte(0))
-	//to
+	// to
 	bytesRet = append(bytesRet, byte(0))
 
 	bytesRet = append(bytesRet, byte(UseAddressPrefix))
@@ -189,8 +190,8 @@ type MintOperation struct {
 }
 
 func (to *MintOperation) SetValue(issueAddr string,
-	issueAssetId string, issueAssetIdNum int64, issueAmount int64, fee uint64) error {
-
+	issueAssetId string, issueAssetIdNum int64, issueAmount int64, fee uint64,
+) error {
 	to.Fee.SetDefault()
 	to.Fee.Amount = int64(fee)
 
@@ -225,17 +226,17 @@ func (to *MintOperation) Pack() []byte {
 	bytesAssetToIssue := to.AssetToIssue.Pack()
 
 	bytesRet = append(bytesRet, bytesFee...)
-	//issuer
+	// issuer
 	bytesRet = append(bytesRet, byte(0))
 
 	bytesRet = append(bytesRet, bytesAssetToIssue...)
-	//issue_to_account
+	// issue_to_account
 	bytesRet = append(bytesRet, byte(0))
 
 	bytesRet = append(bytesRet, byte(UseAddressPrefix))
 	bytesRet = append(bytesRet, to.IssueAddress[:]...)
 
-	//brc20_token
+	// brc20_token
 	bytesRet = append(bytesRet, byte(1))
 
 	// pack empty memo
@@ -362,7 +363,7 @@ func (to *AccountBindOperation) Pack() []byte {
 	// tunnel signature
 	bytesRet = append(bytesRet, PackString(to.TunnelSignature)...)
 
-	//guarantee_id
+	// guarantee_id
 	bytesRet = append(bytesRet, byte(0))
 
 	return bytesRet
@@ -376,7 +377,7 @@ type Transaction struct {
 	Expiration     UTCTime         `json:"expiration"`
 	Operations     []OperationPair `json:"operations"`
 	Extensions     []interface{}   `json:"extensions"`
-	NoncePow       uint64          `json:"nonce"`
+	NoncePow       []byte          `json:"nonce"`
 	Signatures     []Signature     `json:"signatures"`
 }
 
@@ -398,14 +399,13 @@ func (tx *Transaction) Pack() []byte {
 		bytesRet = append(bytesRet, bytesOP...)
 	}
 
-	//extension
+	// extension
 	bytesRet = append(bytesRet, byte(0))
 
-	//pack nonce 0
-	bytesNoncePow := PackUint64(tx.NoncePow)
-	bytesRet = append(bytesRet, bytesNoncePow...)
+	// pack nonce 0
+	bytesRet = append(bytesRet, tx.NoncePow...)
 
-	//without sig
+	// without sig
 	return bytesRet
 }
 
