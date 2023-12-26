@@ -154,7 +154,7 @@ func (m *Miner) mining(wg *sync.WaitGroup, nonce uint64) {
 		statHash = true
 	}
 
-ReBuildTx:
+	// ReBuildTx:
 	nonce = origNonce
 	statIdx := int64(0)
 	_statIdx := int64(0)
