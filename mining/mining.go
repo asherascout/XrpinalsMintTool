@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,7 +36,9 @@ type Miner struct{}
 
 func init() {
 	numCPU := runtime.NumCPU()
+
 	runtime.GOMAXPROCS(numCPU)
+	debug.SetGCPercent(100000)
 	if numCPU > 1 {
 		MinerNum = numCPU
 	}
