@@ -161,7 +161,6 @@ ReBuildTx:
 	}
 
 	target := bitcoin.NBits2Target(Difficult)
-	statStart := time.Now().UnixMicro()
 	txBuildTime := time.Now().Unix()
 
 	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
@@ -169,15 +168,11 @@ ReBuildTx:
 	for {
 		if statHash {
 			if statIdx > 10000000 {
-				hashRate := float64(statIdx) / float64(time.Now().UnixMicro()-statStart)
-				hashRateStr := fmt.Sprintf("%.03f", hashRate)
 				fmt.Println(utils.BoldYellow("[Mining]: "),
 					utils.Bold("Pow Hash Speed ------------------------- "),
-					utils.FgWhiteBgGreen(hashRateStr), utils.Bold("MHash/s"))
-
-				statIdx = 0
-				statStart = time.Now().UnixMicro()
+					utils.FgWhiteBgGreen(statIdx), utils.Bold("MHash/s"))
 			}
+
 			statIdx = statIdx + int64(MinerNum)
 		}
 
