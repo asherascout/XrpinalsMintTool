@@ -309,7 +309,8 @@ func (p *PowPayload) packOrigin() ([]byte, error) {
 }
 
 func (p *PowPayload) pack() ([]byte, error) {
-	bytesRet := append(p.snapBytesRet, tx_builder.PackUint64(p.Nonce)...)
+	bytesRet := append([]byte{}, p.snapBytesRet...)
+	bytesRet = append(bytesRet, tx_builder.PackUint64(p.Nonce)...)
 
 	return bytesRet, nil
 }
