@@ -33,13 +33,13 @@ var (
 
 type Miner struct{}
 
-func init() {
-	numCPU := runtime.NumCPU()
-	runtime.GOMAXPROCS(numCPU)
-	if numCPU > 1 {
-		MinerNum = numCPU * 100
-	}
-}
+// func init() {
+// 	numCPU := runtime.NumCPU()
+// 	runtime.GOMAXPROCS(numCPU)
+// 	if numCPU > 1 {
+// 		MinerNum = numCPU * 100
+// 	}
+// }
 
 func preCheck(assetInfo *utils.AssetInfoRsp) error {
 	addr, err := tx_builder.WifKeyToAddr(PrivateKey)
@@ -198,7 +198,7 @@ ReBuildTx:
 		}
 		hashBytes := s256.Sum(nil)
 		result := new(big.Int).SetBytes(hashBytes)
-
+		fmt.Println(result)
 		if result.Cmp(target) < 0 {
 			if isStop.CompareAndSwap(false, true) {
 				break
