@@ -203,10 +203,6 @@ ReBuildTx:
 			} else {
 				return
 			}
-		} else {
-			if isStop.Load() {
-				return
-			}
 		}
 
 		// next nonce
