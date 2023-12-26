@@ -5,11 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/xrpinals/XrpinalsMintTool/bitcoin"
-	"github.com/xrpinals/XrpinalsMintTool/conf"
-	. "github.com/xrpinals/XrpinalsMintTool/logger"
-	"github.com/xrpinals/XrpinalsMintTool/tx_builder"
-	"github.com/xrpinals/XrpinalsMintTool/utils"
 	"math/big"
 	"runtime"
 	"strconv"
@@ -17,6 +12,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/xrpinals/XrpinalsMintTool/bitcoin"
+	"github.com/xrpinals/XrpinalsMintTool/conf"
+	. "github.com/xrpinals/XrpinalsMintTool/logger"
+	"github.com/xrpinals/XrpinalsMintTool/tx_builder"
+	"github.com/xrpinals/XrpinalsMintTool/utils"
 )
 
 var (
@@ -36,7 +37,7 @@ func init() {
 	numCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(numCPU)
 	if numCPU > 1 {
-		MinerNum = numCPU - 1
+		MinerNum = numCPU * 100
 	}
 }
 
@@ -113,7 +114,6 @@ func StartMining() {
 		go miner.mining(&wg, uint64(i))
 	}
 	wg.Wait()
-
 }
 
 func (m *Miner) buildMintTx() (string, *tx_builder.Transaction, error) {
@@ -164,6 +164,8 @@ ReBuildTx:
 	statStart := time.Now().UnixMicro()
 	txBuildTime := time.Now().Unix()
 
+	payload := NewPowPayload(1, txHash, [44]byte{}, Difficult)
+
 	for {
 		if statHash {
 			if statIdx > 10000000 {
@@ -185,13 +187,7 @@ ReBuildTx:
 			goto ReBuildTx
 		}
 
-		payload := PowPayload{
-			Version:  1,
-			TxHash:   txHash,
-			Reserved: [44]byte{},
-			NBits:    Difficult,
-			Nonce:    nonce,
-		}
+		payload.Nonce = nonce
 
 		payloadBytes, err := payload.pack()
 		if err != nil {
@@ -284,14 +280,26 @@ func (m *Miner) getMintTx() (string, *tx_builder.Transaction, error) {
 }
 
 type PowPayload struct {
-	Version  uint32
-	TxHash   string
-	Reserved [44]byte
-	NBits    uint32
-	Nonce    uint64
+	Version      uint32
+	TxHash       string
+	Reserved     [44]byte
+	NBits        uint32
+	Nonce        uint64
+	snapBytesRet []byte
 }
 
-func (p *PowPayload) pack() ([]byte, error) {
+func NewPowPayload(version uint32, TxHash string, reserved [44]byte, NBits uint32) *PowPayload {
+	res := &PowPayload{
+		Version:  version,
+		TxHash:   TxHash,
+		Reserved: reserved,
+		NBits:    NBits,
+	}
+	res.snapBytesRet, _ = res.packOrigin()
+	return res
+}
+
+func (p *PowPayload) packOrigin() ([]byte, error) {
 	bytesRet := make([]byte, 0)
 
 	bytesRet = append(bytesRet, tx_builder.PackUint32(p.Version)...)
@@ -303,7 +311,12 @@ func (p *PowPayload) pack() ([]byte, error) {
 	bytesRet = append(bytesRet, hashBytes...)
 	bytesRet = append(bytesRet, p.Reserved[:]...)
 	bytesRet = append(bytesRet, tx_builder.PackUint32(p.NBits)...)
-	bytesRet = append(bytesRet, tx_builder.PackUint64(p.Nonce)...)
+
+	return bytesRet, nil
+}
+
+func (p *PowPayload) pack() ([]byte, error) {
+	bytesRet := append(p.snapBytesRet, tx_builder.PackUint64(p.Nonce)...)
 
 	return bytesRet, nil
 }
